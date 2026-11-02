@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training review · {{ batch }}</title>
+<style>
+  :root {
+    --ink: #0b0b0b; --muted: #5f5e5a; --line: #e4e2dc; --paper: #ffffff; --soft: #f6f5f1;
+    --pass: #1f7a4d; --pass-bg: #e6f4ec; --check: #a3460b; --check-bg: #fdf0e3; --info: #2a5f9e; --info-bg: #e8f0fa;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--soft); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+  header p, .note { color: var(--muted); margin: 4px 0; }
+  h1 { font-size: 26px; margin: 0; }
+  h2 { font-size: 18px; margin: 40px 0 12px; }
+  section.card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .verdict { margin: 24px 0; padding: 16px 20px; border-radius: 10px; font-size: 17px; }
+  .verdict strong { display: block; font-size: 20px; }
+  .verdict.ready { background: var(--pass-bg); color: var(--pass); }
+  .verdict.check { background: var(--check-bg); color: var(--check); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+  .kpi b { display: block; font-size: 24px; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .status { display: inline-block; min-width: 64px; text-align: center; padding: 1px 8px; border-radius: 99px;
+            font-size: 12px; font-weight: 600; }
+  .status.pass { background: var(--pass-bg); color: var(--pass); }
+  .status.check { background: var(--check-bg); color: var(--check); }
+  .status.info { background: var(--info-bg); color: var(--info); }
+  .meter { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+  .meter span { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: #2a78d6; }
+  .meter.low i { background: var(--check); }
+  .meter b { width: 40px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .meter.low b { color: var(--check); }
+  .scroll { overflow-x: auto; }
+  table.grid { width: auto; }
+  table.grid td, table.grid th { border: 2px solid var(--paper); text-align: center; padding: 4px 8px;
+                                  font-size: 13px; white-space: nowrap; }
+  table.grid td.player { text-align: left; background: var(--paper); padding-right: 16px; }
+  table.grid td:not(.player) { min-width: 72px; }
+  table.grid td.absent { background: var(--soft); color: var(--muted); }
+  table.grid td.missing { background: var(--paper); color: var(--check); font-style: italic;
+                          outline: 1px dashed var(--check); outline-offset: -3px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  @media print { body { background: #fff; } main { padding: 0; } section, .kpi { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Training review · {{ batch }}</h1>
+  <p>{{ first_day }} → {{ last_day }} · generated {{ generated }} · synthetic data</p>
+</header>
+
+{% if quality.ready %}
+<div class="verdict ready"><strong>Ready for the meeting</strong>Every check passed, or was handled automatically.</div>
+{% else %}
+<div class="verdict check"><strong>{{ quality.to_check }} point{{ "s" if quality.to_check > 1 }} to check before the meeting</strong>
+  The numbers below are usable, but some are missing or uncertain. Each point says who acts.</div>
+{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><b>{{ summary.sessions }}</b><span>sessions</span></div>
+  <div class="kpi"><b>{{ summary.players }}</b><span>players in the squad</span></div>
+  <div class="kpi"><b>{{ summary.attendances }}</b><span>player attendances</span></div>
+  <div class="kpi"><b>{{ summary.complete }} / {{ summary.attendances }}</b><span>complete records (GPS and heart rate)</span></div>
+</div>
+
+<h2>Data quality checks</h2>
+<section class="card scroll">
+<table>
+  <tr><th>Check</th><th>Status</th><th class="num">Issues</th><th>If it fails</th><th>Who acts</th></tr>
+  {% for c in quality.checks %}
+  <tr><td>{{ c.title }}</td><td><span class="status {{ c.status }}">{{ {"pass": "passed", "check": "to check", "info": "handled"}[c.status] }}</span></td>
+      <td class="num">{{ c.issues or "" }}</td><td>{{ c.action if c.issues }}</td><td>{{ c.who_acts if c.issues }}</td></tr>
+  {% endfor %}
+</table>
+</section>
+
+<h2>Completeness by session</h2>
+<section class="card scroll">
+<table>
+  <tr><th>Session</th><th>Date</th><th class="num">Trained</th><th class="num">Absent</th><th>With GPS</th><th>With heart rate</th></tr>
+  {% for s in quality.completeness.itertuples() %}
+  <tr><td>{{ s.session_id }}</td><td>{{ s.date }}</td><td class="num">{{ s.trained }}</td><td class="num">{{ s.absent }}</td>
+    {% for share in (s.gps, s.heart_rate) %}
+    <td><div class="meter{{ ' low' if share < 1 }}"><span><i style="width:{{ (share * 100) | round(1) }}%"></i></span><b>{{ (share * 100) | round | int }}%</b></div></td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+</section>
+
+{% if to_check %}
+<h2>Points to check</h2>
+<section class="card scroll">
+<table>
+  <tr><th>Who acts</th><th>Kind</th><th>Player</th><th>Session</th><th>What we found</th></tr>
+  {% for i in to_check %}
+  <tr><td>{{ i.who_acts }}</td><td>{{ i.kind }}</td><td>{{ i.player_id }}</td><td>{{ i.session_id }}</td><td>{{ i.problem }}</td></tr>
+  {% endfor %}
+</table>
+</section>
+{% endif %}
+
+<h2>Files received</h2>
+<section class="card scroll">
+<table>
+  <tr><th>File</th><th>Recognised as</th><th class="num">Rows</th></tr>
+  {% for f in files %}<tr><td>{{ f.file }}</td><td>{{ f.format }}</td><td class="num">{{ f.rows if f.format != "copy" }}</td></tr>{% endfor %}
+</table>
+{% if handled %}
+<p class="note">Handled automatically: {% for i in handled %}{{ i.file }}: {{ i.problem }}{{ "; " if not loop.last }}{% endfor %}.</p>
+{% endif %}
+</section>
+
+{% for g in grids %}
+<h2>{{ g.title }}, every player × session</h2>
+<section class="card scroll">
+<table class="grid">
+  <tr><th></th><th></th>{% for s in g.sessions %}<th>{{ s }}</th>{% endfor %}</tr>
+  {% for r in g.rows %}
+  <tr><td class="player">{{ r.player }}</td><td class="player">{{ r.position }}</td>
+    {% for c in r.cells %}<td class="{{ c.class }}" style="{{ c.style }}">{{ c.text }}</td>{% endfor %}</tr>
+  {% endfor %}
+</table>
+</section>
+{% endfor %}
+
+<footer>
+  “missing” means no valid measurement, never 0. Players are listed by id, never ranked.
+  This review describes what was recorded; it does not say who is fit or tired.
+</footer>
+</main>
+</body>
+</html>
