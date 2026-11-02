@@ -11,15 +11,16 @@ and to a staff that stops trusting the data.
 
 ## The proposal
 
-A small tool that turns the weekly folder into **one report**:
+A small tool that turns the weekly folder into **a report, then a dataset you can trust**:
 
 1. **A verdict first**: *ready for the meeting*, or *N points to check*, each with who acts and what to do.
-2. **Data-quality checks**: 9 checks on every batch, from "each file sent once" to "every player who trained
-   has a GPS distance".
-3. **Then the overview**: completeness per session, and every player × session, with gaps written, never
-   drawn as 0.
-
-It also writes the clean table as a CSV, for any further analysis.
+2. **Data-quality checks** on every batch, from "each file sent once" to "every player who trained has a GPS
+   distance".
+3. **Corrections that leave a trace**: each decision of the staff ("J21 wore D04 that day", "forgot the vest")
+   is one line with a note saying who confirmed it. The report shows what each one changed; the raw files are
+   never touched.
+4. **One dataset to explore**: every week, cleaned and corrected, in a simple page (by position, one player
+   over time) and as a CSV for any further analysis.
 
 ## What it costs
 
@@ -31,7 +32,7 @@ It also writes the clean table as a CSV, for any further analysis.
 ## Risks, and how they are handled
 
 | Risk | Mitigation |
-|---|---|
+| --- | --- |
 | A vendor changes its export format | an unknown format stops the batch with a clear message; adding it is one entry |
 | Health data leaks | the report stays a file on the club's storage; nothing is sent to a third party |
 | The tool hides a problem | every doubt is reported, never fixed by guessing; automated tests run on every change |

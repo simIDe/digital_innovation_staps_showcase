@@ -27,6 +27,8 @@ class Records(pa.DataFrameModel):
         in_range={"min_value": HEART_RATE_BPM[0], "max_value": HEART_RATE_BPM[1]}, nullable=True
     )
 
+    note: Series[str] = pa.Field(nullable=True)  # the staff's correction or explanation for this record, if any
+
     class Config:
         strict = "filter"  # keep exactly these columns
         coerce = True

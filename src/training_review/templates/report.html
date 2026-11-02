@@ -31,9 +31,9 @@
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .status { display: inline-block; min-width: 64px; text-align: center; padding: 1px 8px; border-radius: 99px;
             font-size: 12px; font-weight: 600; }
-  .status.pass { background: var(--pass-bg); color: var(--pass); }
-  .status.check { background: var(--check-bg); color: var(--check); }
-  .status.info { background: var(--info-bg); color: var(--info); }
+  .status.passed { background: var(--pass-bg); color: var(--pass); }
+  .status.open { background: var(--check-bg); color: var(--check); }
+  .status.handled, .status.explained, .status.corrected { background: var(--info-bg); color: var(--info); }
   .meter { display: flex; align-items: center; gap: 10px; min-width: 160px; }
   .meter span { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
   .meter i { display: block; height: 100%; background: #2a78d6; }
@@ -49,6 +49,10 @@
   table.grid td.absent { background: var(--soft); color: var(--muted); }
   table.grid td.missing { background: var(--paper); color: var(--check); font-style: italic;
                           outline: 1px dashed var(--check); outline-offset: -3px; }
+  table.grid td.noted { position: relative; }
+  table.grid td.noted::after { content: ""; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px;
+                               border-radius: 50%; background: #e8a33d; }
+  h2 small { font-weight: 400; color: var(--muted); font-size: 14px; }
   footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
   @media print { body { background: #fff; } main { padding: 0; } section, .kpi { break-inside: avoid; } }
 </style>
@@ -61,10 +65,11 @@
 </header>
 
 {% if quality.ready %}
-<div class="verdict ready"><strong>Ready for the meeting</strong>Every check passed, or was handled automatically.</div>
+<div class="verdict ready"><strong>Ready for the meeting</strong>Every issue was handled automatically, corrected or explained by the staff.</div>
 {% else %}
 <div class="verdict check"><strong>{{ quality.to_check }} point{{ "s" if quality.to_check > 1 }} to check before the meeting</strong>
-  The numbers below are usable, but some are missing or uncertain. Each point says who acts.</div>
+  The numbers below are usable, but some are missing or uncertain. Each point says who acts.
+  Once decided, record it in <code>data/corrections.yml</code> and run the report again.</div>
 {% endif %}
 
 <div class="kpis">
@@ -77,12 +82,46 @@
 <h2>Data quality checks</h2>
 <section class="card scroll">
 <table>
-  <tr><th>Check</th><th>Status</th><th class="num">Issues</th><th>If it fails</th><th>Who acts</th></tr>
-  {% for c in quality.checks %}
-  <tr><td>{{ c.title }}</td><td><span class="status {{ c.status }}">{{ {"pass": "passed", "check": "to check", "info": "handled"}[c.status] }}</span></td>
-      <td class="num">{{ c.issues or "" }}</td><td>{{ c.action if c.issues }}</td><td>{{ c.who_acts if c.issues }}</td></tr>
+  <tr><th>Check</th><th>Status</th><th class="num">Found</th><th>If it fails</th><th>Who acts</th></tr>
+  {% for c in quality.checks %}{% set found = c.found %}
+  <tr><td>{{ c.title }}</td>
+      <td><span class="status {{ c.status }}">{{ "to check" if c.status == "open" else c.status }}</span></td>
+      <td class="num">{{ found or "" }}</td><td>{{ c.action if c.open }}</td><td>{{ c.who_acts if found }}</td></tr>
   {% endfor %}
 </table>
+</section>
+
+{% if open_issues %}
+<h2>Points to check <small>· {{ open_issues | length }} open</small></h2>
+<section class="card scroll">
+<table>
+  <tr><th>Who acts</th><th>Kind</th><th>Player</th><th>Session</th><th>What we found</th></tr>
+  {% for i in open_issues %}
+  <tr><td>{{ i.who_acts }}</td><td>{{ i.kind }}</td><td>{{ i.player_id }}</td><td>{{ i.session_id }}</td><td>{{ i.problem }}</td></tr>
+  {% endfor %}
+</table>
+</section>
+{% endif %}
+
+<h2>Corrections applied <small>· from data/corrections.yml; the raw files are unchanged</small></h2>
+<section class="card scroll">
+{% if corrections %}
+<table>
+  <tr><th>Correction</th><th>Effect</th><th>Note</th></tr>
+  {% for c in corrections %}<tr><td>{{ c.correction }}</td><td>{{ c.effect }}</td><td>{{ c.note }}</td></tr>{% endfor %}
+</table>
+{% else %}
+<p class="note">No correction for this batch.</p>
+{% endif %}
+{% if resolved %}
+<p class="note" style="margin-top:16px">Issues these corrections resolve:</p>
+<table>
+  <tr><th>Status</th><th>Kind</th><th>Player</th><th>Session</th><th>What we found</th></tr>
+  {% for i in resolved %}
+  <tr><td><span class="status {{ i.status }}">{{ i.status }}</span></td><td>{{ i.kind }}</td><td>{{ i.player_id }}</td><td>{{ i.session_id }}</td><td>{{ i.problem }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
 </section>
 
 <h2>Completeness by session</h2>
@@ -99,17 +138,7 @@
 </table>
 </section>
 
-{% if to_check %}
-<h2>Points to check</h2>
-<section class="card scroll">
-<table>
-  <tr><th>Who acts</th><th>Kind</th><th>Player</th><th>Session</th><th>What we found</th></tr>
-  {% for i in to_check %}
-  <tr><td>{{ i.who_acts }}</td><td>{{ i.kind }}</td><td>{{ i.player_id }}</td><td>{{ i.session_id }}</td><td>{{ i.problem }}</td></tr>
-  {% endfor %}
-</table>
-</section>
-{% endif %}
+
 
 <h2>Files received</h2>
 <section class="card scroll">
@@ -129,14 +158,15 @@
   <tr><th></th><th></th>{% for s in g.sessions %}<th>{{ s }}</th>{% endfor %}</tr>
   {% for r in g.rows %}
   <tr><td class="player">{{ r.player }}</td><td class="player">{{ r.position }}</td>
-    {% for c in r.cells %}<td class="{{ c.class }}" style="{{ c.style }}">{{ c.text }}</td>{% endfor %}</tr>
+    {% for c in r.cells %}<td class="{{ c.class }}" style="{{ c.style }}" title="{{ c.title }}">{{ c.text }}</td>{% endfor %}</tr>
   {% endfor %}
 </table>
 </section>
 {% endfor %}
 
 <footer>
-  “missing” means no valid measurement, never 0. Players are listed by id, never ranked.
+  “missing” means no valid measurement, never 0. A dot marks a record with a correction or an explanation
+  (hover to read it). Players are listed by id, never ranked.
   This review describes what was recorded; it does not say who is fit or tired.
 </footer>
 </main>

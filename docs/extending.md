@@ -53,16 +53,28 @@ The command is made to be scheduled. Its exit code says what happened: `0` ready
   command, then send a message by exit code: to the staff with the report's location (0 or 1), to the
   operator with the error (2). Send the location of the report, never player data, in the message.
 
-## Keep weeks together
+## Add a kind of correction
 
-`records.csv` of each batch has the same columns. To follow trends, concatenate them:
+E.g. `exclude`, to leave out a session that was not a real training (a friendly, a test day):
+
+1. add the model next to `Reassign` and `Explain` in `corrections.py`, and its field in `Correction`;
+2. apply it in `pipeline.py`, where the data it changes is built, and append what it did to `log.applied`;
+3. test that it changes what it should, that the report lists it, and that an unmatched one is reported.
+
+Keep the rule: a correction never edits a raw file, and it always has a note.
+
+## Analyse the unified dataset
+
+`reports/records.csv` holds every batch reported so far, corrected, with a `batch` column. Start any analysis
+from it rather than from the raw files:
 
 ```python
 import pandas as pd
-from pathlib import Path
 
-season = pd.concat(pd.read_csv(p).assign(batch=p.parent.name) for p in Path("reports").glob("*/records.csv"))
+records = pd.read_csv("reports/records.csv")
+trained = records[records.present]
+trained.groupby(["position", "session_id"]).distance_m.median()
 ```
 
-When this becomes a weekly need, the next step is a small database (SQLite, then PostgreSQL if several people
-need it), filled by the same pipeline.
+When several seasons pile up, or several people need it at once, the next step is a small database (SQLite,
+then PostgreSQL), filled by the same pipeline.

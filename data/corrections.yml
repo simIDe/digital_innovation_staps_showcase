@@ -1,0 +1,30 @@
+# Corrections: what the staff decided about the issues of each batch.
+#
+# The raw files in data/samples/ are never edited. Each correction below is applied every time a batch is
+# processed, and the report shows it with its effect. Every correction needs a note: who confirmed it, how.
+#
+#   reassign  a device was worn by another player that day: the distance moves to them (the data changes)
+#   explain   an issue has a known cause: it no longer needs checking (the data does not change)
+
+batch1:
+  - reassign: {device: D04, date: 2026-10-29, to: J21}
+    note: J21's own vest was broken, so J21 wore D04 (J04 was absent). Confirmed by the physical trainer.
+  - explain: {issue: no GPS, player: J15, session: S102}
+    note: Vest forgotten in the locker room. Confirmed by the player.
+  - explain: {issue: no heart rate, player: J12, session: S101}
+    note: Strap battery died after 20 minutes. Strap replaced.
+  - explain: {issue: unknown player, player: J99}
+    note: Trialist on Tuesday, not part of the squad. Ignored on purpose.
+
+batch3:
+  - reassign: {device: D09, date: 2026-11-10, to: J08}
+    note: J08 took D09 from the rack, J09 being absent. Confirmed by the physical trainer.
+  - explain: {issue: no heart rate, player: J05, session: S109}
+    note: Strap failure, already reported to the vendor.
+
+batch4:
+  - explain: {issue: invalid value, device: D11, date: 2026-11-16}
+    note: Device glitch (negative distance); D11 sent back for repair.
+  - explain: {issue: no GPS, player: J11, session: S110}
+    note: Caused by the D11 glitch above; no valid distance for that session.
+  # J17 trained without GPS on 17 Nov (S111): still waiting for the staff's answer.

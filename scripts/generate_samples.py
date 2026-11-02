@@ -126,13 +126,13 @@ def batch(root, number, spec):
     folder = root / f"batch{number}"
     folder.mkdir(parents=True, exist_ok=True)
     roster = players(spec["squad"])
-    roster.to_csv(folder / "effectif.csv", index=False)
+    roster.to_csv(folder / "effectif.csv", index=False, lineterminator="\n")
 
     devices = {f"D{p[1:]}": p for p in roster.player_id}
     for device, player in spec["sheet_swaps"].items():
         devices[device] = player
     sheet = pd.DataFrame([(d, p) for d, p in devices.items() if p], columns=["device_id", "player_id"])
-    sheet.to_csv(folder / "attribution_boitiers.csv", index=False)
+    sheet.to_csv(folder / "attribution_boitiers.csv", index=False, lineterminator="\n")
 
     presence, gps, hr = [], [], []
     for session_id, date, planned, vendor in spec["sessions"]:
@@ -156,7 +156,7 @@ def batch(root, number, spec):
             hr.append((player_id, date, mean_hr, 38 if mean_hr is None else RNG.randint(92, 100)))
 
     pd.DataFrame(presence, columns=["session_id", "date", "player_id", "present", "minutes"]).to_csv(
-        folder / "presence.csv", index=False
+        folder / "presence.csv", index=False, lineterminator="\n"
     )
     hr_df = pd.DataFrame(hr, columns=["player_id", "date", "mean_hr_bpm", "coverage_pct"])
     hr_df = hr_df.astype({"mean_hr_bpm": "Int64"})
@@ -177,19 +177,19 @@ def write_gps(folder, gps, number):
             if date == "2026-10-27":
                 df = pd.concat([df, df[df.device_id == "D07"]], ignore_index=True)
                 name = f"TrackPro_export_{date} (1).csv"
-            df.to_csv(folder / name, index=False)
+            df.to_csv(folder / name, index=False, lineterminator="\n")
         elif vendor == "trackpro_v2":
             # The vendor's new export: French locale, new headers.
             lines = ["Device;Date;Duration (min);Distance (km)"]
             lines += [f"{d};{dt};{m};{x / 1000:.2f}".replace(".", ",") for d, dt, m, x in rows]
-            (folder / f"TrackPro_{date}.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+            (folder / f"TrackPro_{date}.csv").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         else:
             df = pd.DataFrame(
                 [(d, dt, m, int(x)) for d, dt, m, x in rows],
                 columns=["device", "session_date", "minutes", "distance_m"],
             )
             name = "fieldsense_jeudi_FINAL.csv" if number == 1 else f"fieldsense_{date}.csv"
-            df.to_csv(folder / name, index=False, sep=";")
+            df.to_csv(folder / name, index=False, sep=";", lineterminator="\n")
 
 
 def main(root: Path = ROOT):
@@ -198,9 +198,9 @@ def main(root: Path = ROOT):
         write_gps(folder, gps, number)
         if number == 1:
             hr = pd.concat([hr, pd.DataFrame([("J99", "2026-10-27", 149, 97)], columns=hr.columns)])
-        hr.to_csv(folder / "HR_export.csv", index=False)
+        hr.to_csv(folder / "HR_export.csv", index=False, lineterminator="\n")
         if number == 2:
-            hr.to_csv(folder / "HR_export (1).csv", index=False)  # sent twice by mistake
+            hr.to_csv(folder / "HR_export (1).csv", index=False, lineterminator="\n")  # sent twice by mistake
     print("written to", root)
 
 

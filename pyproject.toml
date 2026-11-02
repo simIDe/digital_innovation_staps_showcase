@@ -12,6 +12,10 @@ dependencies = [
     "jinja2>=3.1",
     "rich>=14.0",
     "typer>=0.27",
+    "pyyaml>=6.0.3",
+    "pydantic>=2.14.2",
+    "streamlit>=1.66",
+    "altair>=6.0",
 ]
 
 [project.scripts]

@@ -20,7 +20,7 @@ it leads to a wrong decision about a player, and the staff stop trusting the dat
 ## Who it is for
 
 | Who | What they need, in their words | What the report gives them |
-|---|---|---|
+| --- | --- | --- |
 | **The staff** (the people who plan and run training) | "Can I use these numbers in the meeting?" "What happened this week?" | a verdict at the top, the points to check with what to do, an overview of every player and session |
 | **The operator** (whoever collects and sends the files) | "Did the files arrive, and were they readable?" | the list of files and what each was recognised as, file problems separated from pitch problems |
 | **A decision-maker** (head of performance, club management) | "Is this worth the effort, and is the data safe?" | [the pitch](pitch.md), the success measures below |
@@ -35,7 +35,7 @@ These come from looking at the real files, and asking the staff about each oddit
 1. **Missing is never zero.** A player without GPS did not run 0 m. The report writes *missing*, and asks
    for an explanation.
 2. **Never guess, always report.** When a device was recorded on an absent player, the code does not decide
-   who wore it. It asks, and the staff fix the device sheet.
+   who wore it. It asks, and the staff's answer is recorded as a correction, with who confirmed it.
 3. **Quality first, then the numbers.** The report opens on the verdict and the checks. The overview comes
    after, once you know how far to trust it.
 4. **No ranking.** A "who ran the most" chart puts goalkeepers last by design and turns a review into a league
@@ -49,8 +49,9 @@ These come from looking at the real files, and asking the staff about each oddit
 
 - No fatigue, readiness or injury-risk score: the data cannot support it, and a wrong score is dangerous.
 - No dashboard server, no accounts, no database: a weekly decision needs a weekly report, not a live app.
-  A static file opens anywhere, can be printed, and reads the same in a year.
-- No automatic correction of identities: a person confirms, the device sheet carries the correction.
+  A static file opens anywhere, can be printed, and reads the same in a year. The explorer is a local page
+  that only reads the reports' files.
+- No automatic correction of identities, no silent fix: a person confirms, the corrections file keeps it.
 
 Each of these can change if the staff ask for it. See the [roadmap](#roadmap).
 
@@ -59,7 +60,7 @@ Each of these can change if the staff ask for it. See the [roadmap](#roadmap).
 The tool is worth keeping only if it changes the week of the staff. We measure, during a pilot:
 
 | Measure | Today (to measure before the pilot) | Target |
-|---|---|---|
+| --- | --- | --- |
 | Time from the last file received to a review ready for the meeting | hours, by hand | under 10 minutes |
 | Errors found in the meeting, after the review was shared | unknown: silent | 0 |
 | Records complete at meeting time (GPS and heart rate for every player who trained) | unknown | measured every week, explained when below 100% |
@@ -73,11 +74,10 @@ tells us if they were the right ones.
 Driven by what the staff ask for after using the report, not by what is technically interesting.
 
 | When | What | Why |
-|---|---|---|
-| **Now** | the weekly report, the checks, the clean CSV | the smallest thing that saves time and prevents silent errors |
+| --- | --- | --- |
+| **Now** | the weekly report and its checks; corrections with a note; the unified dataset and its explorer | the smallest loop that saves time, prevents silent errors and keeps every decision traceable |
 | **Next** | run it automatically when a batch lands in a shared folder, and send the link to who acts ([how](extending.md#run-it-every-week)) | nobody has to remember to run it |
-| **Next** | trends across weeks for one player, against their position | asked as soon as several weeks exist; needs the weekly CSVs kept together |
-| **Later** | resolve issues inside a small app, with a note kept for each decision | only if fixing the device sheet by hand proves too slow |
+| **Next** | a simple form for the staff to record a decision, writing to the corrections file | only if writing decisions down for them proves to be the bottleneck |
 | **Later** | a third GPS vendor, or a new sensor | one entry in `formats.py`, see [extending](extending.md) |
 
 ## How we collect feedback

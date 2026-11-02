@@ -7,23 +7,31 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from training_review.issues import CHECKS
+from training_review.issues import CHECKS, CORRECTED, EXPLAINED, HANDLED, OPEN
 from training_review.pipeline import Batch
+
+STATUSES = (OPEN, CORRECTED, EXPLAINED, HANDLED)  # most serious first
 
 
 @dataclass
 class CheckResult:
     title: str
-    issues: int  # how many issues of this kind; 0 means passed
     action: str
     who_acts: str
-    to_check: bool
+    open: int  # issues a person must still look at
+    corrected: int  # issues a person resolved with a reassign: the data changed
+    explained: int  # issues a person explained: the data did not change
+    handled: int  # issues fixed automatically, for information
+
+    @property
+    def found(self) -> int:
+        return self.open + self.corrected + self.explained + self.handled
 
     @property
     def status(self) -> str:
-        if not self.issues:
-            return "pass"
-        return "check" if self.to_check else "info"
+        """The most serious status among its issues, or "passed" when there is none."""
+        counts = dict(zip(STATUSES, (self.open, self.corrected, self.explained, self.handled), strict=True))
+        return next((status for status, n in counts.items() if n), "passed")
 
 
 @dataclass
@@ -34,7 +42,7 @@ class Quality:
     @property
     def to_check(self) -> int:
         """Issues a person must look at before the numbers are used."""
-        return sum(c.issues for c in self.checks if c.status == "check")
+        return sum(c.open for c in self.checks)
 
     @property
     def ready(self) -> bool:
@@ -42,9 +50,10 @@ class Quality:
 
 
 def assess(batch: Batch) -> Quality:
-    counts = batch.issues.kind.value_counts()
+    counts = batch.issues.groupby(["kind", "status"]).size()
     checks = [
-        CheckResult(c.title, int(counts.get(kind, 0)), c.action, c.who_acts, c.to_check) for kind, c in CHECKS.items()
+        CheckResult(c.title, c.action, c.who_acts, *(int(counts.get((kind, s), 0)) for s in STATUSES))
+        for kind, c in CHECKS.items()
     ]
     return Quality(checks, completeness(batch.records))
 
